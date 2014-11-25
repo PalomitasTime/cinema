@@ -13,7 +13,11 @@ $.isIE = function() {
 };
 
 $().ready(function() {
-    videojs('#video', { /* techOrder: ['html5'] */ }, _.noop);
+
+    videojs.options.flash.swf = '/video-js.swf';
+    videojs.options.techOrder = ['html5'];
+
+    videojs('#video');
 
     var socket = io.connect(location.protocol + '//' + location.host);
 
@@ -23,16 +27,16 @@ $().ready(function() {
 
             player.src({
                 src: data.videoLink,
-                type: 'video/mp4'
+                type: 'video/mp4',
             });
+
+            player.load();
 
             setTimeout(function() {
                 $('#loader').toggleClass('hide');
                 $('#video').toggleClass('hide');
 
                 player.play();
-
-                console.log("The movie has started playing.");
             }, 1500);
 
             player.on('ended', function() {
@@ -90,7 +94,7 @@ $().ready(function() {
             return;
         }
 
-        console.log(info);
+        console.log('Playing', info.name);
 
         socket.emit('torrent', { torrentId: torrentId });
 

@@ -11,8 +11,8 @@
     "grunt-contrib-watch": "^0.6.1"
   },
   "dependencies": {
+    "express": "^4.10.4",
     "jquery": "^2.1.1",
-    "node-simple-router": "^0.9.2-11",
     "parse-torrent": "^2.1.2",
     "sha256": "^0.1.1",
     "socket.io": "^1.2.0",

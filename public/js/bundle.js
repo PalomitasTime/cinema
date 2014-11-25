@@ -1,103 +1,107 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var _				= require('underscore');
-var $				= require('jquery');
-var videojs			= require('video.js');
-var io 				= require('socket.io-client');
-var parseTorrent	= require('parse-torrent');
+var _               = require('underscore');
+var $               = require('jquery');
+var videojs         = require('video.js');
+var io              = require('socket.io-client');
+var parseTorrent    = require('parse-torrent');
 
 // Expose jQuery to the global scope so that bootstrap.min.js can see it.
 window.jQuery = $;
 
 // Returns true if Internet Explorer (Any version).
 $.isIE = function() {
-	return navigator.userAgent.indexOf('MSIE ') > -1 || navigator.userAgent.indexOf('Trident/') > -1;
+    return navigator.userAgent.indexOf('MSIE ') > -1 || navigator.userAgent.indexOf('Trident/') > -1;
 };
 
 $().ready(function() {
-	videojs('#video', { /* techOrder: ['html5'] */ }, _.noop);
 
-	var socket = io.connect(location.protocol + '//' + location.host);
+    videojs.options.flash.swf = '/video-js.swf';
+    videojs.options.techOrder = ['html5'];
 
-	socket.on('play', function(data) {
-		videojs('#video').ready(function() {
-			var player = this;
+    videojs('#video');
 
-			player.src({
-				src: data.videoLink,
-				type: 'video/mp4'
-			});
+    var socket = io.connect(location.protocol + '//' + location.host);
 
-			setTimeout(function() {
-				$('#loader').toggleClass('hide');
-				$('#video').toggleClass('hide');
+    socket.on('play', function(data) {
+        videojs('#video').ready(function() {
+            var player = this;
 
-				player.play();
+            player.src({
+                src: data.videoLink,
+                type: 'video/mp4',
+            });
 
-				console.log("The movie has started playing.");
-			}, 1500);
+            player.load();
 
-			player.on('ended', function() {
-				console.log("The movie has ended.");
-			});
-		});
+            setTimeout(function() {
+                $('#loader').toggleClass('hide');
+                $('#video').toggleClass('hide');
 
-		$('#torrent-id').val('');
-	});
+                player.play();
+            }, 1500);
 
-	socket.on('error message', function(data) {
-		console.error(data.message);
-		
-		setTimeout(function() {
-			sweetAlert({
-				title: "An error occured",
-				text: data.message,
-				type: 'error',
-			}, function() {
-				$('#loader').toggleClass('hide');
-				$('#torrent-id').val('');
-				$('#torrent-id').removeClass('animated zoomOutDown');
-				$('#torrent-id').addClass('animated zoomInUp');
-			});
-		}, 500);
-	});
+            player.on('ended', function() {
+                console.log("The movie has ended.");
+            });
+        });
 
-	socket.on('statistics', function(data) {
-		if ($('#statistics').hasClass('hide')) {
-			$('#statistics').removeClass('hide');
-		}
+        $('#torrent-id').val('');
+    });
 
-		$('#statistics-streamers').html(data.streamers);
-		$('#statistics-torrents').html(data.torrents);
-	});
+    socket.on('error message', function(data) {
+        console.error(data.message);
 
-	// For some reason Internet Explorer will fire the on('input')
-	// event when an input element is focused. This behavior is
-	// peculiar to IE. Using the on('blur') instead of the
-	// on('input') event will not lead to the desired behavior,
-	// but it at least it will make the site usable.
-	var eventName = $.isIE() ? 'blur' : 'input';
+        setTimeout(function() {
+            sweetAlert({
+                title: "An error occured",
+                text: data.message,
+                type: 'error',
+            }, function() {
+                $('#loader').toggleClass('hide');
+                $('#torrent-id').val('');
+                $('#torrent-id').removeClass('animated zoomOutDown');
+                $('#torrent-id').addClass('animated zoomInUp');
+            });
+        }, 500);
+    });
 
-	$('#torrent-id').on(eventName, function() {
-		var torrentId = $(this).val();
-		var info = parseTorrent(torrentId);
+    socket.on('statistics', function(data) {
+        if ($('#statistics').hasClass('hide')) {
+            $('#statistics').removeClass('hide');
+        }
 
-		if (!info) {
-			sweetAlert({
-				title: "Invalid link",
-				text: "The link you provided was not valid, try another one.",
-				type: 'error',
-			});
-			$(this).val('');
-			return;
-		}
+        $('#statistics-streamers').html(data.streamers);
+        $('#statistics-torrents').html(data.torrents);
+    });
 
-		console.log(info);
+    // For some reason Internet Explorer will fire the on('input')
+    // event when an input element is focused. This behavior is
+    // peculiar to IE. Using the on('blur') instead of the
+    // on('input') event will not lead to the desired behavior,
+    // but it at least it will make the site usable.
+    var eventName = $.isIE() ? 'blur' : 'input';
 
-		socket.emit('torrent', { torrentId: torrentId });
+    $('#torrent-id').on(eventName, function() {
+        var torrentId = $(this).val();
+        var info = parseTorrent(torrentId);
 
-		$(this).addClass('animated zoomOutDown');
-		$('#loader').toggleClass('hide');
-	});
+        if (!info) {
+            sweetAlert({
+                title: "Invalid link",
+                text: "The link you provided was not valid, try another one.",
+                type: 'error',
+            });
+            $(this).val('');
+            return;
+        }
+
+        console.log('Playing', info.name);
+
+        socket.emit('torrent', { torrentId: torrentId });
+
+        $(this).addClass('animated zoomOutDown');
+        $('#loader').toggleClass('hide');
+    });
 
 });
 },{"jquery":8,"parse-torrent":9,"socket.io-client":18,"underscore":62,"video.js":63}],2:[function(require,module,exports){
