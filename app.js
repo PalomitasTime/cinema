@@ -19,7 +19,7 @@ var webTorrent = new WebTorrent();
 
 function getFirstMovieFile(torrentFiles) {
     return _.first(_.filter(torrentFiles, function(file) {
-        return /^.+\.(mp4|webm|ogg|avi|mov|mkv)$/.test(file.name);
+        return /^.+\.(mp4|m4v|webm|ogg|avi|mov|mkv)$/.test(file.name);
     }));
 }
 
@@ -64,6 +64,14 @@ app.get('/stream/:infoHash', function(req, res) {
             chunkSize = (end - start) + 1;
         }
 
+        if ((end + 1) > length || start < 0 || start > end) {
+            res.writeHead(416, {
+                'Content-Type': 'plain/text',
+            });
+            res.end("Requested Range not satisfiable");
+            return;
+        }
+
         var contentRange = start + '-' + end + '/' + length;
 
         res.writeHead(206, {
@@ -80,6 +88,7 @@ app.get('/stream/:infoHash', function(req, res) {
         // consume a lot of memory.
 
         res.writeHead(200, {
+            'Accept-Ranges': '0-' + length,
             'Content-Type': contentType,
             'Content-Length': length,
         });
@@ -140,7 +149,7 @@ io.on('connection', function(socket) {
 
             var movieFileExt = getFileExtension(movieFile.name);
 
-            if (!_.contains(['mp4'], movieFileExt)) {
+            if (!_.contains(['mp4', 'm4v'], movieFileExt)) {
                 console.error('Unsupported format "' + movieFileExt + '".');
                 socket.emit('error message', {
                     message: movieFileExt.toUpperCase() + " video files are currently not supported. Please pick a torrent with an MP4 video file instead."

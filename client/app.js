@@ -15,34 +15,32 @@ $.isIE = function() {
 $().ready(function() {
 
     videojs.options.flash.swf = '/video-js.swf';
-    videojs.options.techOrder = ['html5'];
+    videojs.options.techOrder = ['html5', 'flash'];
 
     videojs('#video');
 
     var socket = io.connect(location.protocol + '//' + location.host);
 
     socket.on('play', function(data) {
-        videojs('#video').ready(function() {
-            var player = this;
-
-            player.src({
+        var player = videojs('#video').ready(function() {
+            this.src({
                 src: data.videoLink,
                 type: 'video/mp4',
             });
 
-            player.load();
+            this.load();
 
-            setTimeout(function() {
-                $('#loader').toggleClass('hide');
-                $('#video').toggleClass('hide');
-
-                player.play();
-            }, 1500);
-
-            player.on('ended', function() {
+            this.on('ended', function() {
                 console.log("The movie has ended.");
             });
         });
+
+        setTimeout(function() {
+            $('#loader').toggleClass('hide');
+            $('#video').toggleClass('hide');
+
+            player.play();
+        }, 2000);
 
         $('#torrent-id').val('');
     });
